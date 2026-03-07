@@ -3,6 +3,7 @@ import numpy as np
 import os
 from django.conf import settings
 from .models import VideoFingerprint
+from .cloud_storage import CloudStorageService
 
 class FingerprintService:
     @staticmethod
@@ -59,15 +60,35 @@ class FingerprintService:
         """
         fingerprints = cls.generate_fingerprints(video_path)
         
-        # In a real scenario, we might want to batch these or use a more efficient storage
-        # For now, we store them as a JSON list in a single VideoFingerprint entry per movie segment
-        # Or better, one entry per 15-30 second segment.
+        # Clean up existing fingerprints for this movie to avoid duplicates
+        VideoFingerprint.objects.filter(movie=movie).delete()
         
-        # For simplicity, we'll store all fingerprints for this movie in one entry
-        # (Though in production you'd use a vector DB or specialized hash index)
         VideoFingerprint.objects.create(
             movie=movie,
             fingerprint_data={'hashes': fingerprints},
             start_time_offset=0,
-            duration=len(fingerprints) # roughly
+            duration=len(fingerprints)
         )
+
+    @classmethod
+    def process_cloud_movie(cls, movie):
+        """
+        Downloads a movie from GCS, fingerprints it, and cleans up.
+        """
+        if not movie.cloud_bucket or not movie.cloud_file_path:
+            return False
+            
+        cloud_service = CloudStorageService()
+        temp_file = f"temp_{movie.id}_{os.path.basename(movie.cloud_file_path)}"
+        
+        try:
+            cloud_service.download_movie(
+                movie.cloud_bucket,
+                movie.cloud_file_path,
+                temp_file
+            )
+            cls.save_movie_fingerprints(movie, temp_file)
+            return True
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)

@@ -13,6 +13,10 @@ class Movie(models.Model):
     duration_minutes = models.IntegerField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     
+    # Cloud Storage Fields
+    cloud_bucket = models.CharField(max_length=255, null=True, blank=True)
+    cloud_file_path = models.CharField(max_length=500, null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

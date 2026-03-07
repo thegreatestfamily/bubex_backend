@@ -5,10 +5,11 @@ djangorestframework-simplejwt
 psycopg2-binary
 Pillow
 python-dotenv
-opencv-python
+opencv-python-headless
 ffmpeg-python
 celery
 redis
 gunicorn
 django-environ
 whitenoise
+google-cloud-storage
