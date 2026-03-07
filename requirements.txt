@@ -1,0 +1,14 @@
+Django>=4.2,<5.0
+djangorestframework
+django-cors-headers
+djangorestframework-simplejwt
+psycopg2-binary
+Pillow
+python-dotenv
+opencv-python
+ffmpeg-python
+celery
+redis
+gunicorn
+django-environ
+whitenoise
