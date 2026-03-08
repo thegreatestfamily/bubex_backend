@@ -54,3 +54,28 @@ class ScanVideoView(APIView):
             # Clean up temporary file
             if os.path.exists(full_path):
                 os.remove(full_path)
+
+class SyncCloudMoviesView(APIView):
+    """
+    Endpoint to trigger fingerprinting of movies hosted on GCS.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request):
+        from movie_database.models import Movie
+        from .services import FingerprintService
+        
+        movies = Movie.objects.exclude(cloud_file_path__isnull=True).exclude(cloud_file_path__exact='')
+        results = []
+        
+        for movie in movies:
+            success = FingerprintService.process_cloud_movie(movie)
+            results.append({
+                'movie': movie.title,
+                'status': 'success' if success else 'failed'
+            })
+            
+        return Response({
+            'message': f'Processed {len(results)} movies',
+            'details': results
+        }, status=status.HTTP_200_OK)

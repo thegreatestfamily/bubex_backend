@@ -1,15 +1,23 @@
-from google.cloud import storage
+import json
 import os
-from django.conf import settings
+from google.cloud import storage
 
 class CloudStorageService:
     def __init__(self):
-        # Path to your service account JSON key
-        # In production, this can be set as an environment variable pointing to the file
-        self.key_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-        if self.key_path:
-            self.client = storage.Client.from_service_account_json(self.key_path)
-        else:
+        # Support both file path and raw JSON string for Render compatibility
+        key_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        key_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+        
+        try:
+            if key_json:
+                info = json.loads(key_json)
+                self.client = storage.Client.from_service_account_info(info)
+            elif key_path:
+                self.client = storage.Client.from_service_account_json(key_path)
+            else:
+                self.client = None
+        except Exception as e:
+            print(f"Cloud Storage Init Error: {e}")
             self.client = None
 
     def download_movie(self, bucket_name, source_blob_name, destination_file_name):
